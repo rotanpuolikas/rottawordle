@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./styles.css";
-import GlobalKeyListener from './GlobalKeyListener'
+import GlobalKeyListener from "./GlobalKeyListener";
 
 // === CHANGE THE SECRET WORD HERE ===
 // Must be the same length as WORD_LENGTH below (default 5). Upper/lowercase doesn't matter.
@@ -8,9 +8,9 @@ const SECRET = "ALTSU";
 const WORD_LENGTH = SECRET.length;
 const MAX_GUESSES = 6;
 
-const TOPROW = ["Q","W","E","R","T","Y","U","I","O","P","Å"]
-const MIDROW = ["A","S","D","F","G","H","J","K","L","Ö","Ä"]
-const BOTROW = ["ENTER","Z","X","C","V","B","N","M","BACK",]
+const TOPROW = ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "Å"];
+const MIDROW = ["A", "S", "D", "F", "G", "H", "J", "K", "L", "Ö", "Ä"];
+const BOTROW = ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "BACK"];
 
 function evaluateGuess(guess, secret) {
   // returns an array of statuses: 'correct'(green), 'present'(yellow), 'absent'(gray)
@@ -39,7 +39,7 @@ function evaluateGuess(guess, secret) {
 }
 
 function sanitizeInput(value) {
-  return value.replace(/[^ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ]/g, "")
+  return value.replace(/[^ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ]/g, "");
 }
 
 function safeSetCurrent(value) {
@@ -118,129 +118,131 @@ export default function App() {
     setWon(false);
   };
 
-
   return (
-  <>
-  <div className="container">
-    <h1>Eeppinen rottawordle</h1>
+    <>
+      <div className="container">
+        <h1>Eeppinen rottawordle</h1>
 
-    <div className="board">
-      {Array.from({ length: MAX_GUESSES }).map((_, rowIdx) => {
-        const guess = guesses[rowIdx];
-        const isCurrent = rowIdx === guesses.length;
+        <div className="board">
+          {Array.from({ length: MAX_GUESSES }).map((_, rowIdx) => {
+            const guess = guesses[rowIdx];
+            const isCurrent = rowIdx === guesses.length;
 
-        // If it's a past guess → show it
-        // If it's the current guess row → show current input
-        // Otherwise → show empty row
-        const letters = guess
-          ? guess.word.split("")
-          : isCurrent
-          ? current.split("").concat(Array(WORD_LENGTH - current.length).fill(""))
-          : Array(WORD_LENGTH).fill("");
+            // If it's a past guess → show it
+            // If it's the current guess row → show current input
+            // Otherwise → show empty row
+            const letters = guess
+              ? guess.word.split("")
+              : isCurrent
+                ? current
+                    .split("")
+                    .concat(Array(WORD_LENGTH - current.length).fill(""))
+                : Array(WORD_LENGTH).fill("");
 
-        const statuses = guess
-          ? guess.status
-          : Array(WORD_LENGTH).fill("");
-
-          <div key={rowIdx} className="row">
-            {letters.map((ch, i) => (
-              <div
-                key={i}
-                className={`tile ${
-                  statuses[i]
-                    ? statuses[i] // past guess with status
-                    : isCurrent && ch
-                    ? "typing" // current typing row
-                    : ""
-                }`}
-              >
-                {ch}
-              </div>
-            ))}
-          </div>
-        })}
+            const statuses = guess ? guess.status : Array(WORD_LENGTH).fill("");
+          return(
+            <div key={rowIdx} className="row">
+              {letters.map((ch, i) => (
+                <div
+                  key={i}
+                  className={`tile ${
+                    statuses[i]
+                      ? statuses[i] // past guess with status
+                      : isCurrent && ch
+                        ? "typing" // current typing row
+                        : ""
+                  }`}
+                >
+                  {ch}
+                </div>
+              ))}
+            </div>
+          )
+          })}
         </div>
-      <GlobalKeyListener
-        current={current}
-        safeSetCurrent={safeSetCurrent}
-        onChange={onChange}
-        onKeyDown={onKeyDown}
-        WORD_LENGTH={WORD_LENGTH}
+        <GlobalKeyListener
+          current={current}
+          safeSetCurrent={safeSetCurrent}
+          onChange={onChange}
+          onKeyDown={onKeyDown}
+          WORD_LENGTH={WORD_LENGTH}
         />
-      <div className="keyboard">
-        <ul>
-          {TOPROW.map((value, index) => {
-            const keyStatus = getKeyStatus(value, guesses); // new helper function
-            return (
-              <li
-                key={index}
-                className={keyStatus} // apply status class
-                onClick={() => safeSetCurrent(current + value)}
-              >
-                {value}
-              </li>
-            );
-          })}
-        </ul>
 
-        <ul>
-          {MIDROW.map((value, index) => {
-            const keyStatus = getKeyStatus(value, guesses);
-            return (
-              <li
-                key={index}
-                className={keyStatus}
-                onClick={() => safeSetCurrent(current + value)}
-              >
-                {value}
-              </li>
-            );
-          })}
-        </ul>
+<div className="keyboard">
+  <ul>
+    {TOPROW.map((value, index) => {
+      const keyStatus = getKeyStatus(value, guesses); // new helper function
+      return (
+        <li
+          key={index}
+          className={keyStatus} // apply status class
+          onClick={() => safeSetCurrent(current + value)}
+        >
+          {value}
+        </li>
+      );
+    })}
+  </ul>
 
-        <ul>
-          {BOTROW.map((value, index) => {
-            if (value === "ENTER") {
-              return (
-                <li className="enterkey" key={index} onClick={submitGuess}>
-                  {value}
-                </li>
-              );
-            }
-            if (value === "BACK") {
-              return (
-                <li className="backkey" key={index} onClick={handleBackClick}>
-                  🢤
-                </li>
-              );
-            }
-            const keyStatus = getKeyStatus(value, guesses);
-            return (
-              <li
-                key={index}
-                className={keyStatus}
-                onClick={() => safeSetCurrent(current + value)}
-              >
-                {value}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+  <ul>
+    {MIDROW.map((value, index) => {
+      const keyStatus = getKeyStatus(value, guesses);
+      return (
+        <li
+          key={index}
+          className={keyStatus}
+          onClick={() => safeSetCurrent(current + value)}
+        >
+          {value}
+        </li>
+      );
+    })}
+  </ul>
 
-      <div className="message">{message}</div>
+  <ul>
+    {BOTROW.map((value, index) => {
+      if (value === "ENTER") {
+        return (
+          <li className="enterkey" key={index} onClick={submitGuess}>
+            {value}
+          </li>
+        );
+      }
+      if (value === "BACK") {
+        return (
+          <li className="backkey" key={index} onClick={handleBackClick}>
+            🢤
+          </li>
+        );
+      }
+      const keyStatus = getKeyStatus(value, guesses);
+      return (
+        <li
+          key={index}
+          className={keyStatus}
+          onClick={() => safeSetCurrent(current + value)}
+        >
+          {value}
+        </li>
+      );
+    })}
+  </ul>
+</div>
 
-      <footer className="footer">aitoa rottatechiä vuodesta 2025</footer>
 
-      {showPopup && (
-        <div className="popup-overlay">
-          <div className="popup">
-            <p>We do not collect any data.</p>
-            <button onClick={dismissPopup}>OK</button>
+        <div className="message">{message}</div>
+
+        <footer className="footer">aitoa rottatechiä vuodesta 2025</footer>
+
+        {showPopup && (
+          <div className="popup-overlay">
+            <div className="popup">
+              <p>We do not collect any data.</p>
+              <button onClick={dismissPopup}>OK</button>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
-  </>
+        )}
+      </div>
+    </>
   );
 }

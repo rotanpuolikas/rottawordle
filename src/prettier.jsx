@@ -140,23 +140,24 @@ export default function App() {
                 : Array(WORD_LENGTH).fill("");
 
             const statuses = guess ? guess.status : Array(WORD_LENGTH).fill("");
-
-            <div key={rowIdx} className="row">
-              {letters.map((ch, i) => (
-                <div
-                  key={i}
-                  className={`tile ${
-                    statuses[i]
-                      ? statuses[i] // past guess with status
-                      : isCurrent && ch
-                        ? "typing" // current typing row
-                        : ""
-                  }`}
-                >
-                  {ch}
-                </div>
-              ))}
-            </div>;
+            return (
+              <div key={rowIdx} className="row">
+                {letters.map((ch, i) => (
+                  <div
+                    key={i}
+                    className={`tile ${
+                      statuses[i]
+                        ? statuses[i] // past guess with status
+                        : isCurrent && ch
+                          ? "typing" // current typing row
+                          : ""
+                    }`}
+                  >
+                    {ch}
+                  </div>
+                ))}
+              </div>
+            );
           })}
         </div>
         <GlobalKeyListener
@@ -166,6 +167,7 @@ export default function App() {
           onKeyDown={onKeyDown}
           WORD_LENGTH={WORD_LENGTH}
         />
+
         <div className="keyboard">
           <ul>
             {TOPROW.map((value, index) => {

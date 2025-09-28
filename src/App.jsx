@@ -38,25 +38,6 @@ function evaluateGuess(guess, secret) {
   return result;
 }
 
-function sanitizeInput(value) {
-  return value.replace(/[^ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ]/g, "");
-}
-
-function safeSetCurrent(value) {
-  const valtwo = value.toUpperCase();
-  setCurrent(valtwo);
-}
-
-function getKeyStatus(key, guesses) {
-  // Check all previous guesses for this letter
-  for (let guess of guesses) {
-    const idx = guess.word.indexOf(key);
-    if (idx !== -1) {
-      return guess.status[idx]; // returns "correct", "present", or "absent"
-    }
-  }
-  return ""; // default, no status
-}
 
 export default function App() {
   const [guesses, setGuesses] = useState([]); // array of {word, statusArray}
@@ -69,6 +50,33 @@ export default function App() {
     setShowPopup(false);
   };
 
+  function sanitizeInput(value) {
+    return value.replace(/[^ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ]/g, "");
+  }
+  
+  function safeSetCurrent(value) {
+    if(value.length > WORD_LENGTH){
+      return null
+    }
+    const valtwo = value.toUpperCase();
+    setCurrent(sanitizeInput(valtwo));
+  }
+  
+  function getKeyStatus(key, guesses) {
+    // Check all previous guesses for this letter
+    for (let guess of guesses) {
+      const idx = guess.word.indexOf(key);
+      if (idx !== -1) {
+        return guess.status[idx]; // returns "correct", "present", or "absent"
+      }
+    }
+    return ""; // default, no status
+  }
+  
+  
+  function handleBackClick() {
+    safeSetCurrent(current.slice(0, -1))
+  }
   const onChange = (e) => {
     const val = e.target.value.toUpperCase();
     // allow only letters and up to WORD_LENGTH
@@ -140,23 +148,24 @@ export default function App() {
                 : Array(WORD_LENGTH).fill("");
 
             const statuses = guess ? guess.status : Array(WORD_LENGTH).fill("");
-
-            <div key={rowIdx} className="row">
-              {letters.map((ch, i) => (
-                <div
-                  key={i}
-                  className={`tile ${
-                    statuses[i]
-                      ? statuses[i] // past guess with status
-                      : isCurrent && ch
-                        ? "typing" // current typing row
-                        : ""
-                  }`}
-                >
-                  {ch}
-                </div>
-              ))}
-            </div>;
+            return (
+              <div key={rowIdx} className="row">
+                {letters.map((ch, i) => (
+                  <div
+                    key={i}
+                    className={`tile ${
+                      statuses[i]
+                        ? statuses[i] // past guess with status
+                        : isCurrent && ch
+                          ? "typing" // current typing row
+                          : ""
+                    }`}
+                  >
+                    {ch}
+                  </div>
+                ))}
+              </div>
+            );
           })}
         </div>
         <GlobalKeyListener
@@ -166,6 +175,7 @@ export default function App() {
           onKeyDown={onKeyDown}
           WORD_LENGTH={WORD_LENGTH}
         />
+
         <div className="keyboard">
           <ul>
             {TOPROW.map((value, index) => {
