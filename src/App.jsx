@@ -1,0 +1,161 @@
+import React, { useState } from "react";
+import "./styles.css";
+
+// === CHANGE THE SECRET WORD HERE ===
+// Must be the same length as WORD_LENGTH below (default 5). Upper/lowercase doesn't matter.
+const SECRET = "ALTSU";
+const WORD_LENGTH = SECRET.length;
+const MAX_GUESSES = 6;
+
+function evaluateGuess(guess, secret) {
+  // returns an array of statuses: 'correct'(green), 'present'(yellow), 'absent'(gray)
+  guess = guess.toUpperCase();
+  secret = secret.toUpperCase();
+  const result = Array(guess.length).fill("absent");
+  const secretChars = secret.split("");
+
+  // first pass: correct letters
+  for (let i = 0; i < guess.length; i++) {
+    if (guess[i] === secret[i]) {
+      result[i] = "correct";
+      secretChars[i] = null; // consume
+    }
+  }
+  // second pass: present but wrong position
+  for (let i = 0; i < guess.length; i++) {
+    if (result[i] === "correct") continue;
+    const idx = secretChars.indexOf(guess[i]);
+    if (idx !== -1) {
+      result[i] = "present";
+      secretChars[idx] = null; // consume
+    }
+  }
+  return result;
+}
+
+export default function App() {
+  const [guesses, setGuesses] = useState([]); // array of {word, statusArray}
+  const [current, setCurrent] = useState("");
+  const [message, setMessage] = useState("");
+  const [won, setWon] = useState(false);
+  const [showPopup, setShowPopup] = useState(true);
+
+  const dismissPopup = () => {
+    setShowPopup(false);
+  };
+
+  const onChange = (e) => {
+    const val = e.target.value.toUpperCase();
+    // allow only letters and up to WORD_LENGTH
+    const cleaned = val
+      .replace(/[^ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ]/g, "")
+      .slice(0, WORD_LENGTH);
+    setCurrent(cleaned);
+    setMessage("");
+  };
+
+  const submitGuess = () => {
+    if (won) return;
+    if (current.length !== WORD_LENGTH) {
+      setMessage(`Arvauksessa pittää olla ${WORD_LENGTH} kirjainta`);
+      return;
+    }
+    if (guesses.length >= MAX_GUESSES) return;
+
+    const status = evaluateGuess(current, SECRET);
+    const newGuess = { word: current, status };
+    const newGuesses = [...guesses, newGuess];
+    setGuesses(newGuesses);
+    setCurrent("");
+
+    if (status.every((s) => s === "correct")) {
+      setWon(true);
+      setMessage("voitit pelin");
+      return;
+    }
+
+    if (newGuesses.length >= MAX_GUESSES) {
+      setMessage(`Hävisit, voi harmi. Sana oli: ${SECRET.toUpperCase()}`);
+    }
+  };
+
+  const onKeyDown = (e) => {
+    if (e.key === "Enter") submitGuess();
+    if (e.key === "Backspace") {
+      // default input handles it
+    }
+  };
+
+  const reset = () => {
+    setGuesses([]);
+    setCurrent("");
+    setMessage("");
+    setWon(false);
+  };
+
+  return (
+    <div className="container">
+      <h1>Eeppinen rottawordle</h1>
+
+      <div className="board">
+        {Array.from({ length: MAX_GUESSES }).map((_, rowIdx) => {
+          const guess = guesses[rowIdx];
+          const letters = guess
+            ? guess.word.split("")
+            : Array(WORD_LENGTH).fill("");
+          const statuses = guess ? guess.status : Array(WORD_LENGTH).fill("");
+          const isCurrent = rowIdx === guesses.length;
+
+          return (
+            <div key={rowIdx} className="row">
+              {letters.map((ch, i) => (
+                <div
+                  key={i}
+                  className={`tile ${statuses[i] ? statuses[i] : isCurrent && ch ? "typing" : ""}`}
+                >
+                  {ch}
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="controls">
+        <input
+          aria-label="Guess input"
+          value={current}
+          onChange={onChange}
+          onKeyDown={onKeyDown}
+          maxLength={WORD_LENGTH}
+          placeholder={Array(WORD_LENGTH).fill("x").join("")}
+        />
+        <div className="buttons">
+          <button
+            onClick={submitGuess}
+            disabled={won || guesses.length >= MAX_GUESSES}
+          >
+            Enter
+          </button>
+          <button onClick={() => setCurrent("")} disabled={!current}>
+            Clear
+          </button>
+          <button onClick={reset}>Reset</button>
+        </div>
+      </div>
+
+      <div className="message">{message}</div>
+
+      <footer className="footer">aitoa rottatechiä vuodesta 2025</footer>
+
+      {showPopup && (
+        <div className="popup-overlay">
+          <div className="popup">
+            <p>We do not collect any data.</p>
+            <button onClick={dismissPopup}>OK</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
