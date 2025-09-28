@@ -1,11 +1,16 @@
 import React, { useState } from "react";
 import "./styles.css";
+import GlobalKeyListener from "./GlobalKeyListener";
 
 // === CHANGE THE SECRET WORD HERE ===
 // Must be the same length as WORD_LENGTH below (default 5). Upper/lowercase doesn't matter.
 const SECRET = "ALTSU";
 const WORD_LENGTH = SECRET.length;
 const MAX_GUESSES = 6;
+
+const TOPROW = ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "Å"];
+const MIDROW = ["A", "S", "D", "F", "G", "H", "J", "K", "L", "Ö", "Ä"];
+const BOTROW = ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "BACK"];
 
 function evaluateGuess(guess, secret) {
   // returns an array of statuses: 'correct'(green), 'present'(yellow), 'absent'(gray)
@@ -31,6 +36,26 @@ function evaluateGuess(guess, secret) {
     }
   }
   return result;
+}
+
+function sanitizeInput(value) {
+  return value.replace(/[^ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ]/g, "");
+}
+
+function safeSetCurrent(value) {
+  const valtwo = value.toUpperCase();
+  setCurrent(valtwo);
+}
+
+function getKeyStatus(key, guesses) {
+  // Check all previous guesses for this letter
+  for (let guess of guesses) {
+    const idx = guess.word.indexOf(key);
+    if (idx !== -1) {
+      return guess.status[idx]; // returns "correct", "present", or "absent"
+    }
+  }
+  return ""; // default, no status
 }
 
 export default function App() {
@@ -94,68 +119,127 @@ export default function App() {
   };
 
   return (
-    <div className="container">
-      <h1>Eeppinen rottawordle</h1>
+    <>
+      <div className="container">
+        <h1>Eeppinen rottawordle</h1>
 
-      <div className="board">
-        {Array.from({ length: MAX_GUESSES }).map((_, rowIdx) => {
-          const guess = guesses[rowIdx];
-          const letters = guess
-            ? guess.word.split("")
-            : Array(WORD_LENGTH).fill("");
-          const statuses = guess ? guess.status : Array(WORD_LENGTH).fill("");
-          const isCurrent = rowIdx === guesses.length;
+        <div className="board">
+          {Array.from({ length: MAX_GUESSES }).map((_, rowIdx) => {
+            const guess = guesses[rowIdx];
+            const isCurrent = rowIdx === guesses.length;
 
-          return (
+            // If it's a past guess → show it
+            // If it's the current guess row → show current input
+            // Otherwise → show empty row
+            const letters = guess
+              ? guess.word.split("")
+              : isCurrent
+                ? current
+                    .split("")
+                    .concat(Array(WORD_LENGTH - current.length).fill(""))
+                : Array(WORD_LENGTH).fill("");
+
+            const statuses = guess ? guess.status : Array(WORD_LENGTH).fill("");
+
             <div key={rowIdx} className="row">
               {letters.map((ch, i) => (
                 <div
                   key={i}
-                  className={`tile ${statuses[i] ? statuses[i] : isCurrent && ch ? "typing" : ""}`}
+                  className={`tile ${
+                    statuses[i]
+                      ? statuses[i] // past guess with status
+                      : isCurrent && ch
+                        ? "typing" // current typing row
+                        : ""
+                  }`}
                 >
                   {ch}
                 </div>
               ))}
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="controls">
-        <input
-          aria-label="Guess input"
-          value={current}
+            </div>;
+          })}
+        </div>
+        <GlobalKeyListener
+          current={current}
+          safeSetCurrent={safeSetCurrent}
           onChange={onChange}
           onKeyDown={onKeyDown}
-          maxLength={WORD_LENGTH}
-          placeholder={Array(WORD_LENGTH).fill("x").join("")}
+          WORD_LENGTH={WORD_LENGTH}
         />
-        <div className="buttons">
-          <button
-            onClick={submitGuess}
-            disabled={won || guesses.length >= MAX_GUESSES}
-          >
-            Enter
-          </button>
-          <button onClick={() => setCurrent("")} disabled={!current}>
-            Clear
-          </button>
-          <button onClick={reset}>Reset</button>
+        <div className="keyboard">
+          <ul>
+            {TOPROW.map((value, index) => {
+              const keyStatus = getKeyStatus(value, guesses); // new helper function
+              return (
+                <li
+                  key={index}
+                  className={keyStatus} // apply status class
+                  onClick={() => safeSetCurrent(current + value)}
+                >
+                  {value}
+                </li>
+              );
+            })}
+          </ul>
+
+          <ul>
+            {MIDROW.map((value, index) => {
+              const keyStatus = getKeyStatus(value, guesses);
+              return (
+                <li
+                  key={index}
+                  className={keyStatus}
+                  onClick={() => safeSetCurrent(current + value)}
+                >
+                  {value}
+                </li>
+              );
+            })}
+          </ul>
+
+          <ul>
+            {BOTROW.map((value, index) => {
+              if (value === "ENTER") {
+                return (
+                  <li className="enterkey" key={index} onClick={submitGuess}>
+                    {value}
+                  </li>
+                );
+              }
+              if (value === "BACK") {
+                return (
+                  <li className="backkey" key={index} onClick={handleBackClick}>
+                    🢤
+                  </li>
+                );
+              }
+              const keyStatus = getKeyStatus(value, guesses);
+              return (
+                <li
+                  key={index}
+                  className={keyStatus}
+                  onClick={() => safeSetCurrent(current + value)}
+                >
+                  {value}
+                </li>
+              );
+            })}
+          </ul>
         </div>
-      </div>
 
-      <div className="message">{message}</div>
+        <div className="message">{message}</div>
 
-      <footer className="footer">aitoa rottatechiä vuodesta 2025</footer>
+        <footer className="footer">aitoa rottatechiä vuodesta 2025</footer>
 
-      {showPopup && (
-        <div className="popup-overlay">
-          <div className="popup">
-            <p>We do not collect any data.</p>
-            <button onClick={dismissPopup}>OK</button>
+        {showPopup && (
+          <div className="popup-overlay">
+            <div className="popup">
+              <p>We do not collect any data.</p>
+              <button onClick={dismissPopup}>OK</button>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }
