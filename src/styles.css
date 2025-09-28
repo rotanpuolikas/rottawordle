@@ -146,6 +146,35 @@ button:disabled {
 }
 
 
+.winpopup {
+  position: fixed;
+  margin: auto;
+  width: 300px;
+  height: 600px;
+  margin-top: 50%;
+  background: #1e1e20;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.popup {
+  background: #1e1e20;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 300px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.winpopup button {
+  margin-top: 12px;
+  background: var(--correct);
+  color: #fff;
+  font-weight: 600
+}
+
 .popup-overlay {
   position: fixed;
   top: 0;
@@ -203,18 +232,23 @@ button:disabled {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #555;
+  background-color: #777;
   height: 58px;
   margin: 3px;
   width: 48px;
-  border-radius: 6px;
+  border-radius: 7px;
+  transition: background-color 0.1s ease;
+}
+
+.keyboard li:hover {
+  background-color: #777;
 }
 
 .keyboard .enterkey {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
+  width: 76px;
   font-size: 18px;
 }
 
@@ -222,6 +256,18 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 62px;
-  font-size: 35px;
+  width: 76px;
+  font-size: 30px;
+}
+
+.keyboard .correct {
+  background-color: var(--correct)
+}
+
+.keyboard .present {
+  background-color: var(--present)
+}
+
+.keyboard .absent {
+  background-color: var(--absent)
 }

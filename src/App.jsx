@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./styles.css";
-import GlobalKeyListener from "./GlobalKeyListener";
+import GlobalKeyListener from "./GlobalKeyListener"
+import CalculateScore from "./CalculateScore"
 
 // === CHANGE THE SECRET WORD HERE ===
 // Must be the same length as WORD_LENGTH below (default 5). Upper/lowercase doesn't matter.
@@ -45,10 +46,16 @@ export default function App() {
   const [message, setMessage] = useState("");
   const [won, setWon] = useState(false);
   const [showPopup, setShowPopup] = useState(true);
+  const [showWon, setShowWon] = useState(true)
+  const[endscreen, setendscreen] = useState([])
 
   const dismissPopup = () => {
     setShowPopup(false);
   };
+
+  const dismissWin = () => {
+    setShowWon(false)
+  }
 
   function sanitizeInput(value) {
     return value.replace(/[^ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ]/g, "");
@@ -61,18 +68,43 @@ export default function App() {
     const valtwo = value.toUpperCase();
     setCurrent(sanitizeInput(valtwo));
   }
-  
-  function getKeyStatus(key, guesses) {
-    // Check all previous guesses for this letter
-    for (let guess of guesses) {
-      const idx = guess.word.indexOf(key);
-      if (idx !== -1) {
-        return guess.status[idx]; // returns "correct", "present", or "absent"
+ function mayhem () {
+    const absent = "⬛"
+    const present = "🟨"
+    const correct = "🟩"
+
+    guesses.map((innerArray) => {
+      let tempend = []
+      innerArray.status.map((item) => {
+        if(item == "correct"){
+          tempend.push(correct)
+        }
+        if(item == "present"){
+          tempend.push(present)
+        }
+        else{
+          tempend.push(absent)
+        }
+      })
+      setendscreen([...endscreen, tempend])
+      
+    })
+  } 
+ function getKeyStatus(key, guesses) {
+  // priority: correct > present > absent
+  let status = "";
+  for (let guess of guesses) {
+    guess.word.split("").forEach((ch, i) => {
+      if (ch === key) {
+        const s = guess.status[i];
+        if (s === "correct") status = "correct"; // highest priority
+        else if (s === "present" && status !== "correct") status = "present";
+        else if (s === "absent" && status === "") status = "absent";
       }
-    }
-    return ""; // default, no status
+    });
   }
-  
+  return status;
+}  
   
   function handleBackClick() {
     safeSetCurrent(current.slice(0, -1))
@@ -102,6 +134,7 @@ export default function App() {
     setCurrent("");
 
     if (status.every((s) => s === "correct")) {
+      mayhem()
       setWon(true);
       setMessage("voitit pelin");
       return;
@@ -179,11 +212,10 @@ export default function App() {
         <div className="keyboard">
           <ul>
             {TOPROW.map((value, index) => {
-              const keyStatus = getKeyStatus(value, guesses); // new helper function
               return (
                 <li
                   key={index}
-                  className={keyStatus} // apply status class
+                  className={getKeyStatus(value, guesses)} // apply status class
                   onClick={() => safeSetCurrent(current + value)}
                 >
                   {value}
@@ -194,14 +226,13 @@ export default function App() {
 
           <ul>
             {MIDROW.map((value, index) => {
-              const keyStatus = getKeyStatus(value, guesses);
               return (
                 <li
                   key={index}
-                  className={keyStatus}
+                  className={getKeyStatus(value, guesses)}
                   onClick={() => safeSetCurrent(current + value)}
                 >
-                  {value}
+                {value}
                 </li>
               );
             })}
@@ -223,11 +254,10 @@ export default function App() {
                   </li>
                 );
               }
-              const keyStatus = getKeyStatus(value, guesses);
               return (
                 <li
                   key={index}
-                  className={keyStatus}
+                  className={getKeyStatus(value, guesses)}
                   onClick={() => safeSetCurrent(current + value)}
                 >
                   {value}
@@ -240,7 +270,16 @@ export default function App() {
         <div className="message">{message}</div>
 
         <footer className="footer">aitoa rottatechiä vuodesta 2025</footer>
-
+        {won && showWon && (
+            <div className="winpopup">
+              <p>voitit pelin</p>
+              <CalculateScore
+                endscreen={endscreen}
+                />
+              <button onClick={dismissWin}>OK</button>
+            </div>
+        )}
+        
         {showPopup && (
           <div className="popup-overlay">
             <div className="popup">
