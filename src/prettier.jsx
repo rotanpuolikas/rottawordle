@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./styles.css";
 import GlobalKeyListener from "./GlobalKeyListener";
+import CalculateScore from "./CalculateScore";
 
 // === CHANGE THE SECRET WORD HERE ===
 // Must be the same length as WORD_LENGTH below (default 5). Upper/lowercase doesn't matter.
@@ -38,37 +39,85 @@ function evaluateGuess(guess, secret) {
   return result;
 }
 
-function sanitizeInput(value) {
-  return value.replace(/[^ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ]/g, "");
-}
-
-function safeSetCurrent(value) {
-  const valtwo = value.toUpperCase();
-  setCurrent(valtwo);
-}
-
-function getKeyStatus(key, guesses) {
-  // Check all previous guesses for this letter
-  for (let guess of guesses) {
-    const idx = guess.word.indexOf(key);
-    if (idx !== -1) {
-      return guess.status[idx]; // returns "correct", "present", or "absent"
-    }
-  }
-  return ""; // default, no status
-}
-
 export default function App() {
   const [guesses, setGuesses] = useState([]); // array of {word, statusArray}
   const [current, setCurrent] = useState("");
   const [message, setMessage] = useState("");
   const [won, setWon] = useState(false);
-  const [showPopup, setShowPopup] = useState(true);
+  const [showPopup, setShowPopup] = useState(false);
+  const [showWon, setShowWon] = useState(true);
+  const [endscreen, setendscreen] = useState([]);
+  const [lost, setLost] = useState(false);
+  const [wantCookie, setWantCookie] = useState(false);
+
+  useEffect(() => {
+    const seenPopup = localStorage.getItem("seenPopup");
+    if (!seenPopup) {
+      setShowPopup(true);
+      console.log("nähty");
+    }
+  }, []);
 
   const dismissPopup = () => {
+    localStorage.setItem("seenPopup", true);
     setShowPopup(false);
   };
 
+  const dismissPopupNoCookie = () => {
+    setShowPopup(false);
+  };
+
+  const dismissWin = () => {
+    setShowWon(false);
+  };
+
+  function sanitizeInput(value) {
+    return value.replace(/[^ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ]/g, "");
+  }
+
+  function safeSetCurrent(value) {
+    if (value.length > WORD_LENGTH) {
+      return null;
+    }
+    const valtwo = value.toUpperCase();
+    setCurrent(sanitizeInput(valtwo));
+  }
+
+  function mayhem(newGuesses) {
+    const absent = "⬛";
+    const present = "🟨";
+    const correct = "🟩";
+    const statusToEmoji = {
+      absent,
+      present,
+      correct,
+    };
+
+    return newGuesses
+      .map((item) => item.status.map((s) => statusToEmoji[s]).join(""))
+      .join("\n");
+  }
+
+  function getKeyStatus(key, guesses) {
+    // priority: correct > present > absent
+    let status = "";
+    for (let guess of guesses) {
+      guess.word.split("").forEach((ch, i) => {
+        if (ch === key) {
+          const s = guess.status[i];
+          if (s === "correct")
+            status = "correct"; // highest priority
+          else if (s === "present" && status !== "correct") status = "present";
+          else if (s === "absent" && status === "") status = "absent";
+        }
+      });
+    }
+    return status;
+  }
+
+  function handleBackClick() {
+    safeSetCurrent(current.slice(0, -1));
+  }
   const onChange = (e) => {
     const val = e.target.value.toUpperCase();
     // allow only letters and up to WORD_LENGTH
@@ -94,12 +143,16 @@ export default function App() {
     setCurrent("");
 
     if (status.every((s) => s === "correct")) {
+      setendscreen(mayhem(newGuesses));
+      console.log(mayhem(guesses));
       setWon(true);
       setMessage("voitit pelin");
       return;
     }
 
     if (newGuesses.length >= MAX_GUESSES) {
+      setendscreen(mayhem(newGuesses));
+      setLost(true);
       setMessage(`Hävisit, voi harmi. Sana oli: ${SECRET.toUpperCase()}`);
     }
   };
@@ -171,11 +224,10 @@ export default function App() {
         <div className="keyboard">
           <ul>
             {TOPROW.map((value, index) => {
-              const keyStatus = getKeyStatus(value, guesses); // new helper function
               return (
                 <li
                   key={index}
-                  className={keyStatus} // apply status class
+                  className={getKeyStatus(value, guesses)} // apply status class
                   onClick={() => safeSetCurrent(current + value)}
                 >
                   {value}
@@ -186,11 +238,10 @@ export default function App() {
 
           <ul>
             {MIDROW.map((value, index) => {
-              const keyStatus = getKeyStatus(value, guesses);
               return (
                 <li
                   key={index}
-                  className={keyStatus}
+                  className={getKeyStatus(value, guesses)}
                   onClick={() => safeSetCurrent(current + value)}
                 >
                   {value}
@@ -215,11 +266,10 @@ export default function App() {
                   </li>
                 );
               }
-              const keyStatus = getKeyStatus(value, guesses);
               return (
                 <li
                   key={index}
-                  className={keyStatus}
+                  className={getKeyStatus(value, guesses)}
                   onClick={() => safeSetCurrent(current + value)}
                 >
                   {value}
@@ -231,13 +281,31 @@ export default function App() {
 
         <div className="message">{message}</div>
 
-        <footer className="footer">aitoa rottatechiä vuodesta 2025</footer>
+        <footer className="footer">
+          aitoa rottatechiä vuodesta 2025 |{" "}
+          <a href="https://rottaradio.fi/privacy.html">privacy policy</a>
+        </footer>
+        {won | lost && showWon ? (
+          <div className="popup-overlay">
+            <div className="winpopup">
+              {won ? <p>voitit pelin</p> : <p>hävisit. sana oli {SECRET}</p>}
+              <p>tossa kopioitava muoto</p>
+              <CalculateScore endscreen={endscreen} />
+              <button onClick={dismissWin}>OK</button>
+            </div>
+          </div>
+        ) : (
+          <br />
+        )}
 
         {showPopup && (
           <div className="popup-overlay">
             <div className="popup">
               <p>We do not collect any data.</p>
+              <p>Press OK to add a cookie to never show this popup again.</p>
+              <p>Press DISMISS to not add the cookie.</p>
               <button onClick={dismissPopup}>OK</button>
+              <button onClick={dismissPopupNoCookie}>DISMISS</button>
             </div>
           </div>
         )}

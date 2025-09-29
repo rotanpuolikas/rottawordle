@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./styles.css";
-import GlobalKeyListener from "./GlobalKeyListener"
-import CalculateScore from "./CalculateScore"
+import GlobalKeyListener from "./GlobalKeyListener";
+import CalculateScore from "./CalculateScore";
 
 // === CHANGE THE SECRET WORD HERE ===
 // Must be the same length as WORD_LENGTH below (default 5). Upper/lowercase doesn't matter.
@@ -39,85 +39,84 @@ function evaluateGuess(guess, secret) {
   return result;
 }
 
-
 export default function App() {
   const [guesses, setGuesses] = useState([]); // array of {word, statusArray}
   const [current, setCurrent] = useState("");
   const [message, setMessage] = useState("");
   const [won, setWon] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
-  const [showWon, setShowWon] = useState(true)
-  const[endscreen, setendscreen] = useState([])
-  const [lost, setLost] = useState(false)
-  const [wantCookie, setWantCookie] = useState(false)
+  const [showWon, setShowWon] = useState(true);
+  const [endscreen, setendscreen] = useState([]);
+  const [lost, setLost] = useState(false);
+  const [wantCookie, setWantCookie] = useState(false);
 
   useEffect(() => {
-    const seenPopup = localStorage.getItem('seenPopup')
-    if (!seenPopup){
-      setShowPopup(true)
-      console.log("nähty")
+    const seenPopup = localStorage.getItem("seenPopup");
+    if (!seenPopup) {
+      setShowPopup(true);
+      console.log("nähty");
     }
-  }, [])
+  }, []);
 
   const dismissPopup = () => {
-    localStorage.setItem('seenPopup', true)
+    localStorage.setItem("seenPopup", true);
     setShowPopup(false);
   };
 
   const dismissPopupNoCookie = () => {
-    setShowPopup(false)
-  }
+    setShowPopup(false);
+  };
 
   const dismissWin = () => {
-    setShowWon(false)
-  }
+    setShowWon(false);
+  };
 
   function sanitizeInput(value) {
     return value.replace(/[^ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ]/g, "");
   }
-  
+
   function safeSetCurrent(value) {
-    if(value.length > WORD_LENGTH){
-      return null
+    if (value.length > WORD_LENGTH) {
+      return null;
     }
     const valtwo = value.toUpperCase();
     setCurrent(sanitizeInput(valtwo));
   }
 
-  
-function mayhem(newGuesses) {
-  const absent = "⬛"
-  const present = "🟨"
-  const correct = "🟩"
-  const statusToEmoji = {
-    absent,
-    present,
-    correct,
+  function mayhem(newGuesses) {
+    const absent = "⬛";
+    const present = "🟨";
+    const correct = "🟩";
+    const statusToEmoji = {
+      absent,
+      present,
+      correct,
+    };
+
+    return newGuesses
+      .map((item) => item.status.map((s) => statusToEmoji[s]).join(""))
+      .join("\n");
   }
 
-  return(newGuesses.map(item =>
-      item.status.map(s => statusToEmoji[s]).join("")
-  ).join("\n"))
-}
-  
- function getKeyStatus(key, guesses) {
-  // priority: correct > present > absent
-  let status = "";
-  for (let guess of guesses) {
-    guess.word.split("").forEach((ch, i) => {
-      if (ch === key) {
-        const s = guess.status[i];
-        if (s === "correct") status = "correct"; // highest priority
-        else if (s === "present" && status !== "correct") status = "present";
-        else if (s === "absent" && status === "") status = "absent";
-      }
-    });
+  function getKeyStatus(key, guesses) {
+    // priority: correct > present > absent
+    let status = "";
+    for (let guess of guesses) {
+      guess.word.split("").forEach((ch, i) => {
+        if (ch === key) {
+          const s = guess.status[i];
+          if (s === "correct")
+            status = "correct"; // highest priority
+          else if (s === "present" && status !== "correct") status = "present";
+          else if (s === "absent" && status === "") status = "absent";
+        }
+      });
+    }
+    return status;
   }
-  return status;
-}  
-  
+
   function handleBackClick() {
-    safeSetCurrent(current.slice(0, -1))
+    safeSetCurrent(current.slice(0, -1));
   }
   const onChange = (e) => {
     const val = e.target.value.toUpperCase();
@@ -144,16 +143,16 @@ function mayhem(newGuesses) {
     setCurrent("");
 
     if (status.every((s) => s === "correct")) {
-      setendscreen(mayhem(newGuesses))
-      console.log(mayhem(guesses))
+      setendscreen(mayhem(newGuesses));
+      console.log(mayhem(guesses));
       setWon(true);
       setMessage("voitit pelin");
       return;
     }
 
     if (newGuesses.length >= MAX_GUESSES) {
-      setendscreen(mayhem(newGuesses))
-      setLost(true)
+      setendscreen(mayhem(newGuesses));
+      setLost(true);
       setMessage(`Hävisit, voi harmi. Sana oli: ${SECRET.toUpperCase()}`);
     }
   };
@@ -245,7 +244,7 @@ function mayhem(newGuesses) {
                   className={getKeyStatus(value, guesses)}
                   onClick={() => safeSetCurrent(current + value)}
                 >
-                {value}
+                  {value}
                 </li>
               );
             })}
@@ -282,23 +281,23 @@ function mayhem(newGuesses) {
 
         <div className="message">{message}</div>
 
-        <footer className="footer">aitoa rottatechiä vuodesta 2025 | <a href="https://rottaradio.fi/privacy">privacy policy</a></footer>
-        {won | lost && showWon ?(
+        <footer className="footer">
+          aitoa rottatechiä vuodesta 2025 |{" "}
+          <a href="https://rottaradio.fi/privacy.html">privacy policy</a>
+        </footer>
+        {won | lost && showWon ? (
           <div className="popup-overlay">
             <div className="winpopup">
-              { won ?
-              <p>voitit pelin</p> :
-              <p>hävisit. sana oli {SECRET}</p>
-                }
+              {won ? <p>voitit pelin</p> : <p>hävisit. sana oli {SECRET}</p>}
               <p>tossa kopioitava muoto</p>
-              <CalculateScore
-                endscreen={endscreen}
-                />
+              <CalculateScore endscreen={endscreen} />
               <button onClick={dismissWin}>OK</button>
             </div>
           </div>
-        ): <br />}
-        
+        ) : (
+          <br />
+        )}
+
         {showPopup && (
           <div className="popup-overlay">
             <div className="popup">
