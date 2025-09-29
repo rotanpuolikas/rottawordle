@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./styles.css";
 import GlobalKeyListener from "./GlobalKeyListener"
 import CalculateScore from "./CalculateScore"
@@ -45,13 +45,28 @@ export default function App() {
   const [current, setCurrent] = useState("");
   const [message, setMessage] = useState("");
   const [won, setWon] = useState(false);
-  const [showPopup, setShowPopup] = useState(true);
+  const [showPopup, setShowPopup] = useState(false);
   const [showWon, setShowWon] = useState(true)
   const[endscreen, setendscreen] = useState([])
+  const [lost, setLost] = useState(false)
+  const [wantCookie, setWantCookie] = useState(false)
+
+  useEffect(() => {
+    const seenPopup = localStorage.getItem('seenPopup')
+    if (!seenPopup){
+      setShowPopup(true)
+      console.log("nähty")
+    }
+  }, [])
 
   const dismissPopup = () => {
+    localStorage.setItem('seenPopup', true)
     setShowPopup(false);
   };
+
+  const dismissPopupNoCookie = () => {
+    setShowPopup(false)
+  }
 
   const dismissWin = () => {
     setShowWon(false)
@@ -68,28 +83,23 @@ export default function App() {
     const valtwo = value.toUpperCase();
     setCurrent(sanitizeInput(valtwo));
   }
- function mayhem () {
-    const absent = "⬛"
-    const present = "🟨"
-    const correct = "🟩"
 
-    guesses.map((innerArray) => {
-      let tempend = []
-      innerArray.status.map((item) => {
-        if(item == "correct"){
-          tempend.push(correct)
-        }
-        if(item == "present"){
-          tempend.push(present)
-        }
-        else{
-          tempend.push(absent)
-        }
-      })
-      setendscreen([...endscreen, tempend])
-      
-    })
-  } 
+  
+function mayhem(newGuesses) {
+  const absent = "⬛"
+  const present = "🟨"
+  const correct = "🟩"
+  const statusToEmoji = {
+    absent,
+    present,
+    correct,
+  }
+
+  return(newGuesses.map(item =>
+      item.status.map(s => statusToEmoji[s]).join("")
+  ).join("\n"))
+}
+  
  function getKeyStatus(key, guesses) {
   // priority: correct > present > absent
   let status = "";
@@ -134,13 +144,16 @@ export default function App() {
     setCurrent("");
 
     if (status.every((s) => s === "correct")) {
-      mayhem()
+      setendscreen(mayhem(newGuesses))
+      console.log(mayhem(guesses))
       setWon(true);
       setMessage("voitit pelin");
       return;
     }
 
     if (newGuesses.length >= MAX_GUESSES) {
+      setendscreen(mayhem(newGuesses))
+      setLost(true)
       setMessage(`Hävisit, voi harmi. Sana oli: ${SECRET.toUpperCase()}`);
     }
   };
@@ -269,22 +282,31 @@ export default function App() {
 
         <div className="message">{message}</div>
 
-        <footer className="footer">aitoa rottatechiä vuodesta 2025</footer>
-        {won && showWon && (
+        <footer className="footer">aitoa rottatechiä vuodesta 2025 | <a href="https://rottaradio.fi/privacy">privacy policy</a></footer>
+        {won | lost && showWon ?(
+          <div className="popup-overlay">
             <div className="winpopup">
-              <p>voitit pelin</p>
+              { won ?
+              <p>voitit pelin</p> :
+              <p>hävisit. sana oli {SECRET}</p>
+                }
+              <p>tossa kopioitava muoto</p>
               <CalculateScore
                 endscreen={endscreen}
                 />
               <button onClick={dismissWin}>OK</button>
             </div>
-        )}
+          </div>
+        ): <br />}
         
         {showPopup && (
           <div className="popup-overlay">
             <div className="popup">
               <p>We do not collect any data.</p>
+              <p>Press OK to add a cookie to never show this popup again.</p>
+              <p>Press DISMISS to not add the cookie.</p>
               <button onClick={dismissPopup}>OK</button>
+              <button onClick={dismissPopupNoCookie}>DISMISS</button>
             </div>
           </div>
         )}
