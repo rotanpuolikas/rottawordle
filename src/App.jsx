@@ -5,7 +5,7 @@ import CalculateScore from "./CalculateScore";
 
 // === CHANGE THE SECRET WORD HERE ===
 // Must be the same length as WORD_LENGTH below (default 5). Upper/lowercase doesn't matter.
-const SECRET = "ALTSU";
+const SECRET = "FACTORY";
 const WORD_LENGTH = SECRET.length;
 const MAX_GUESSES = 6;
 

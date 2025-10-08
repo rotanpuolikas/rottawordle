@@ -17,8 +17,7 @@ function GlobalKeyListener({ current, safeSetCurrent, onChange, onKeyDown, WORD_
         !e.ctrlKey &&
         !e.metaKey &&
         !e.altKey &&
-        e.key.length == 1 &&
-        current.length <= 5
+        e.key.length == 1
       ) {
         safeSetCurrent(current + e.key)
         return;
